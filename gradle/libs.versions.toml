@@ -1,0 +1,20 @@
+[versions]
+springBoot = "3.5.16"
+springAi   = "1.0.8"
+java       = "21"
+
+[libraries]
+# BOMs — importados como platform(), fijan versiones de todo lo de abajo
+spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springBoot" }
+spring-ai-bom   = { module = "org.springframework.ai:spring-ai-bom",              version.ref = "springAi" }
+
+# Starters — sin versión a propósito: la pone el BOM
+spring-boot-starter      = { module = "org.springframework.boot:spring-boot-starter" }
+spring-boot-starter-web  = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+
+spring-ai-starter-model-ollama = { module = "org.springframework.ai:spring-ai-starter-model-ollama" }
+spring-ai-starter-model-openai = { module = "org.springframework.ai:spring-ai-starter-model-openai" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
