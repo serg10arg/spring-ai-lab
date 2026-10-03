@@ -167,7 +167,7 @@ el detalle está en `docs/TESTING.md`.
 | --- | --- | --- | --- | --- |
 | 0 | — | raíz | Monorepo Gradle, convenciones, entorno Ollama medido | Completada |
 | 1 | 1 | `labs` | Primera app Spring AI y cambio de proveedor en un paso | Completada |
-| 2 | 2 | `lab-chat-client`, `lab-advisors`, `lab-embeddings` | `ChatClient`, advisors propios, embeddings, `SimpleVectorStore` | En curso |
+| 2 | 2 | `lab-chat-client`, `lab-advisors`, `lab-embeddings` | `ChatClient`, advisors propios, embeddings, `SimpleVectorStore` | Completada |
 | 3 | 3 | `lab-advanced-api` | Streaming, prompt templates, structured output, documentos, function calling | Pendiente |
 | 4 | 4 | `polyglot-chat` | Traducción en tiempo real, transcripción y síntesis de voz en un chat web | Pendiente |
 | 5 | 5 | `beat-shazam` | Java Sound API, `EmbeddingModel` propio por huella de audio, PGVector | Pendiente |
