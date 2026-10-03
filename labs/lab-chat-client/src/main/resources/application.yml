@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: lab-chat-client
+  profiles:
+    # Un runner por perfil: simple | template | stream. Sin --spring.profiles.active
+    # corre el simple.
+    default: simple
+  ai:
+    model:
+      # Este modulo solo chatea: sin bean de embeddings, nada puede pedir nomic-embed-text.
+      embedding: none
+    ollama:
+      base-url: http://localhost:11434
+      init:
+        # Nunca descargar modelos en el arranque: falla rapido con 404 si el nombre no existe.
+        pull-model-strategy: never
+      chat:
+        options:
+          model: llama3.2:3b

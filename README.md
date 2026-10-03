@@ -32,8 +32,10 @@ El diagrama de arquitectura vive en `docs/images/` y se construye de forma incre
 cada etapa agrega el módulo que le corresponde y la prosa que recorre el flujo de una
 petición de punta a punta nombrando clases reales.
 
-Estado actual: un único módulo, `labs/lab-getting-started`, una app de consola que
-inyecta `ChatModel` y le pasa un prompt a `llama3.2:3b` vía el starter de Ollama. La
+Estado actual: dos módulos de consola sobre el starter de Ollama y `llama3.2:3b`.
+`labs/lab-getting-started` inyecta `ChatModel` directamente; `labs/lab-chat-client`
+construye un `ChatClient` sobre ese mismo `ChatModel` a partir del builder
+autoconfigurado. La
 estructura de carpetas (`labs/`, `apps/`, `platform/`, `agents/`) refleja la
 organización prevista, documentada en la tabla de módulos.
 
@@ -42,7 +44,9 @@ organización prevista, documentada en la tabla de módulos.
 | Módulo | Capa o rol | Responsabilidad | Estado |
 | --- | --- | --- | --- |
 | `labs/lab-getting-started` | Referencia | Ejemplo de control: `ChatModel` portable sobre Ollama, sin servidor web | Completado |
-| `labs/lab-core-api` | Referencia | Ejercita las APIs fundamentales de Spring AI: `ChatModel`, `ChatClient`, advisors, embeddings, `SimpleVectorStore` | Pendiente |
+| `labs/lab-chat-client` | Referencia | `ChatClient` sobre `ChatModel`: builder autoconfigurado, `ChatClientCustomizer`, plantillas, converter propio, streaming | Completado |
+| `labs/lab-advisors` | Referencia | La cadena de advisors: logging, safeguard, memoria de chat y un `RateLimitAdvisor` propio | Pendiente |
+| `labs/lab-embeddings` | Referencia | `EmbeddingModel`, `SimpleVectorStore`, búsqueda por similitud y chunking | Pendiente |
 | `labs/lab-advanced-api` | Referencia | Streaming, prompt templates, structured output, procesamiento de documentos, function calling | Pendiente |
 | `apps/polyglot-chat` | Aplicación | Chat web con traducción en tiempo real, transcripción de voz y síntesis de voz | Pendiente |
 | `apps/beat-shazam` | Aplicación | Identificación de canciones mediante huella de audio y búsqueda por similitud vectorial | Pendiente |
@@ -159,7 +163,7 @@ el detalle está en `docs/TESTING.md`.
 | --- | --- | --- | --- | --- |
 | 0 | — | raíz | Monorepo Gradle, convenciones, entorno Ollama medido | Completada |
 | 1 | 1 | `labs` | Primera app Spring AI y cambio de proveedor en un paso | Completada |
-| 2 | 2 | `lab-core-api` | `ChatModel`, `ChatClient`, advisors propios, embeddings, `SimpleVectorStore` | Pendiente |
+| 2 | 2 | `lab-chat-client`, `lab-advisors`, `lab-embeddings` | `ChatClient`, advisors propios, embeddings, `SimpleVectorStore` | En curso |
 | 3 | 3 | `lab-advanced-api` | Streaming, prompt templates, structured output, documentos, function calling | Pendiente |
 | 4 | 4 | `polyglot-chat` | Traducción en tiempo real, transcripción y síntesis de voz en un chat web | Pendiente |
 | 5 | 5 | `beat-shazam` | Java Sound API, `EmbeddingModel` propio por huella de audio, PGVector | Pendiente |
