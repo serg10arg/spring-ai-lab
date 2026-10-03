@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: lab-advisors
+  profiles:
+    # Un runner por perfil: logging | order | safeguard | ratelimit | memory.
+    # Sin --spring.profiles.active corre logging.
+    default: logging
+  ai:
+    model:
+      # Este modulo solo chatea: sin bean de embeddings, nada puede pedir nomic-embed-text.
+      embedding: none
+    ollama:
+      base-url: http://localhost:11434
+      init:
+        # Nunca descargar modelos en el arranque: falla rapido con 404 si el nombre no existe.
+        pull-model-strategy: never
+      chat:
+        options:
+          model: llama3.2:3b
+
+logging:
+  level:
+    # SimpleLoggerAdvisor escribe en DEBUG: sin esto, el advisor corre y no se ve nada.
+    org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor: DEBUG

@@ -32,10 +32,11 @@ El diagrama de arquitectura vive en `docs/images/` y se construye de forma incre
 cada etapa agrega el módulo que le corresponde y la prosa que recorre el flujo de una
 petición de punta a punta nombrando clases reales.
 
-Estado actual: dos módulos de consola sobre el starter de Ollama y `llama3.2:3b`.
+Estado actual: tres módulos de consola sobre el starter de Ollama y `llama3.2:3b`.
 `labs/lab-getting-started` inyecta `ChatModel` directamente; `labs/lab-chat-client`
 construye un `ChatClient` sobre ese mismo `ChatModel` a partir del builder
-autoconfigurado. La
+autoconfigurado; `labs/lab-advisors` intercala advisors entre el `ChatClient` y el
+modelo, incluido un `RateLimitAdvisor` propio que corta la cadena antes de llamarlo. La
 estructura de carpetas (`labs/`, `apps/`, `platform/`, `agents/`) refleja la
 organización prevista, documentada en la tabla de módulos.
 
@@ -45,7 +46,7 @@ organización prevista, documentada en la tabla de módulos.
 | --- | --- | --- | --- |
 | `labs/lab-getting-started` | Referencia | Ejemplo de control: `ChatModel` portable sobre Ollama, sin servidor web | Completado |
 | `labs/lab-chat-client` | Referencia | `ChatClient` sobre `ChatModel`: builder autoconfigurado, `ChatClientCustomizer`, plantillas, converter propio, streaming | Completado |
-| `labs/lab-advisors` | Referencia | La cadena de advisors: logging, safeguard, memoria de chat y un `RateLimitAdvisor` propio | Pendiente |
+| `labs/lab-advisors` | Referencia | La cadena de advisors: logging, orden, safeguard, memoria de chat y un `RateLimitAdvisor` propio | Completado |
 | `labs/lab-embeddings` | Referencia | `EmbeddingModel`, `SimpleVectorStore`, búsqueda por similitud y chunking | Pendiente |
 | `labs/lab-advanced-api` | Referencia | Streaming, prompt templates, structured output, procesamiento de documentos, function calling | Pendiente |
 | `apps/polyglot-chat` | Aplicación | Chat web con traducción en tiempo real, transcripción de voz y síntesis de voz | Pendiente |
