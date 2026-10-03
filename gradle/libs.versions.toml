@@ -12,6 +12,7 @@ spring-ai-bom   = { module = "org.springframework.ai:spring-ai-bom",            
 spring-boot-starter      = { module = "org.springframework.boot:spring-boot-starter" }
 spring-boot-starter-web  = { module = "org.springframework.boot:spring-boot-starter-web" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+junit-platform-launcher  = { module = "org.junit.platform:junit-platform-launcher" }
 
 spring-ai-starter-model-ollama = { module = "org.springframework.ai:spring-ai-starter-model-ollama" }
 spring-ai-starter-model-openai = { module = "org.springframework.ai:spring-ai-starter-model-openai" }

@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: lab-getting-started
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      init:
+        # Nunca descargar modelos en el arranque: con 8 GB, un typo en el nombre del
+        # modelo no debe disparar un pull de varios GB. Mejor fallar rapido.
+        pull-model-strategy: never
+      chat:
+        options:
+          # Ollama resuelve por nombre exacto: copiar tal cual de `ollama list`.
+          model: llama3.2:3b
