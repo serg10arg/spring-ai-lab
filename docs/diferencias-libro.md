@@ -117,6 +117,10 @@ el reactivo; el detalle está en el README del módulo.
 - **Problema que evita:** pagar un proveedor de nube por una demo de bajo valor. Si
   algún día aparece un proveedor local, el código de aplicación no cambia: solo falta
   el proveedor.
+- **Límite del sustituto (ver H-003):** una lista de palabras no es moderación. Y cuando
+  la lista falló, lo que frenó el pedido fue el alineamiento del propio modelo: una capa
+  que no se controla ni se configura, y que cambia si se cambia de modelo. Eso no es una
+  garantía.
 
 ### D-012 — Image Model API documentada, no implementada
 
@@ -159,9 +163,25 @@ el reactivo; el detalle está en el README del módulo.
 - **Detalle de 1.0.8:** el `ChatMemory` lo autoconfigura el starter
   (`MessageWindowChatMemory`, 20 mensajes), pero el advisor exige el id de conversación
   en el contexto de cada pedido: `.advisors(a -> a.param(ChatMemory.CONVERSATION_ID, id))`.
-  Sin él falla con `conversationId cannot be null` (un `Assert` en el código fuente; no
-  se ejecutó).
+  Sin él falla con `IllegalArgumentException: conversationId cannot be null` antes de
+  llegar al modelo. Verificado ejecutándolo (`MessageChatMemoryAdvisorTests`).
 - **Problema que evita:** llegar al capítulo 3 sin haber visto la memoria funcionando.
+
+### D-019 — `RateLimitAdvisor` lanza una excepción en vez de devolver una respuesta sintética
+
+- **Libro:** al superar el límite, el advisor arma un `ChatClientResponse` con un
+  `AssistantMessage` de "Rate Limit Exceeded" y lo devuelve como si fuera la respuesta.
+- **Acá:** lanza `RateLimitExceededException` y no devuelve nada.
+- **Por qué:** es un desacuerdo técnico con el autor, no una adaptación forzada por el
+  stack. Una respuesta sintética no se distingue de una generada por el modelo: el
+  llamador la imprime, la guarda en memoria o la parsea como si el modelo hubiera
+  contestado. Es el mismo modo de falla silencioso que muestra `SafeGuardAdvisor` en
+  H-003, cuyo rechazo sale como un mensaje del asistente. Una excepción obliga al
+  llamador a tratar el rechazo como lo que es.
+- **Lo que cuesta:** el llamador tiene que capturar la excepción (`RateLimitRunner` lo
+  hace). Con la versión del libro, el código que no sabe del límite sigue funcionando,
+  pero con datos falsos.
+- **Problema que evita:** rechazos que se cuelan como contenido del modelo.
 
 ## Hallazgos de calidad de modelo
 
@@ -227,7 +247,9 @@ mayúsculas (`String.contains`, verificado en el código fuente de 1.0.8):
 | `Who were the money launderers in the film?` | Bloqueado | Falso positivo: subcadena dentro de otra palabra (test unitario) |
 
 En la corrida, el pedido con mayúscula lo frenó el propio `llama3.2:3b`, que se negó a
-responder. O sea que la defensa que funcionó fue la del modelo, no la del advisor.
+responder. **Cuando el guardrail falló, la seguridad vino de la capa que no se controla
+ni se configura**: el alineamiento del modelo, que cambia si se cambia de modelo y no se
+puede testear como código. Lo que salvó la corrida no es una garantía.
 `SafeGuardAdvisor` sirve como corte barato y determinista antes de gastar una llamada,
 pero no reemplaza a un clasificador (D-011). Si en algún momento se usa en serio, hay que
 normalizar el texto antes de comparar, o escribir un advisor propio que lo haga.

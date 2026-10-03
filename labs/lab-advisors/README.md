@@ -80,7 +80,8 @@ mensajes anteriores a cada pedido.
 
 ## Decisiones del `RateLimitAdvisor`
 
-- **Lanza `RateLimitExceededException` en vez de devolver un mensaje armado.** Una
+- **Lanza `RateLimitExceededException` en vez de devolver un mensaje armado (D-019).**
+  El libro devuelve un `AssistantMessage` de "Rate Limit Exceeded"; acá no, porque una
   respuesta falsa del "asistente" haría creer al llamador que contestó el modelo.
   `SafeGuardAdvisor` sí devuelve un mensaje, y por eso en `safeguard` el rechazo se ve
   igual que una respuesta.
@@ -122,11 +123,14 @@ Nivel 0, sin Ollama. Pasan con `SPRING_AI_OLLAMA_BASEURL=http://localhost:1`.
 - `SafeGuardAdvisorTests`: documenta el comportamiento de una clase de Spring AI, no de
   código propio. Bloquea la coincidencia exacta, también dentro de otras palabras
   (`launderers`), y deja pasar `Launder`. Si una versión futura cambia eso, el test avisa.
+- `MessageChatMemoryAdvisorTests`: documenta dos comportamientos de Spring AI. Sin id
+  de conversación falla con `conversationId cannot be null` antes de llamar al modelo,
+  y cada conversación guarda sus turnos por separado.
 - `AdvisorsApplicationTests` (perfil `test`): ningún runner activo, `ChatMemory`
   autoconfigurado como `MessageWindowChatMemory`, el `RateLimitAdvisor` es un bean y no
   hay `EmbeddingModel`.
 
 ## Desviaciones
 
-D-014, D-017 y H-003 en [`docs/diferencias-libro.md`](../../docs/diferencias-libro.md),
+D-014, D-017, D-019 y H-003 en [`docs/diferencias-libro.md`](../../docs/diferencias-libro.md),
 más la fila de chat memory en la sección de drift.
