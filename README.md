@@ -32,7 +32,8 @@ El diagrama de arquitectura vive en `docs/images/` y se construye de forma incre
 cada etapa agrega el módulo que le corresponde y la prosa que recorre el flujo de una
 petición de punta a punta nombrando clases reales.
 
-Estado actual: el monorepo está inicializado y no contiene módulos todavía. La
+Estado actual: un único módulo, `labs/lab-getting-started`, una app de consola que
+inyecta `ChatModel` y le pasa un prompt a `llama3.2:3b` vía el starter de Ollama. La
 estructura de carpetas (`labs/`, `apps/`, `platform/`, `agents/`) refleja la
 organización prevista, documentada en la tabla de módulos.
 
@@ -40,6 +41,7 @@ organización prevista, documentada en la tabla de módulos.
 
 | Módulo | Capa o rol | Responsabilidad | Estado |
 | --- | --- | --- | --- |
+| `labs/lab-getting-started` | Referencia | Ejemplo de control: `ChatModel` portable sobre Ollama, sin servidor web | Completado |
 | `labs/lab-core-api` | Referencia | Ejercita las APIs fundamentales de Spring AI: `ChatModel`, `ChatClient`, advisors, embeddings, `SimpleVectorStore` | Pendiente |
 | `labs/lab-advanced-api` | Referencia | Streaming, prompt templates, structured output, procesamiento de documentos, function calling | Pendiente |
 | `apps/polyglot-chat` | Aplicación | Chat web con traducción en tiempo real, transcripción de voz y síntesis de voz | Pendiente |
@@ -93,6 +95,12 @@ organización prevista, documentada en la tabla de módulos.
   `ollama ps` muestra una única entrada. Problema que evita: latencias de decenas de
   segundos por paginación, diagnosticadas como lentitud del modelo.
 
+- **Autoría asistida por IA, declarada acá y no en cada commit.** El código y la
+  documentación se escriben con asistencia de herramientas de IA (Claude Code). Las
+  decisiones, la verificación y la responsabilidad sobre el resultado son del autor.
+  Los commits no llevan trailer `Co-Authored-By`; esta declaración lo reemplaza.
+  Problema que evita: atribución ambigua sin ensuciar el historial de Git.
+
 ## Ejecución
 
 ### Prerrequisitos
@@ -135,6 +143,11 @@ $emb = @{ model="nomic-embed-text"; prompt="hola mundo" } | ConvertTo-Json
 ollama ps
 ```
 
+```powershell
+# Ejemplo de control: una pregunta a ChatModel, respuesta por stdout, y el proceso termina
+.\gradlew :labs:lab-getting-started:bootRun --console=plain
+```
+
 ### Nivel 2 — Proveedores en la nube (con coste)
 
 Disponible a partir de la etapa 4. Requiere claves de API y presupuesto explícito;
@@ -145,7 +158,7 @@ el detalle está en `docs/TESTING.md`.
 | Etapa | Cap. | Módulo | Incremento | Estado |
 | --- | --- | --- | --- | --- |
 | 0 | — | raíz | Monorepo Gradle, convenciones, entorno Ollama medido | Completada |
-| 1 | 1 | `labs` | Primera app Spring AI y cambio de proveedor en un paso | Pendiente |
+| 1 | 1 | `labs` | Primera app Spring AI y cambio de proveedor en un paso | Completada |
 | 2 | 2 | `lab-core-api` | `ChatModel`, `ChatClient`, advisors propios, embeddings, `SimpleVectorStore` | Pendiente |
 | 3 | 3 | `lab-advanced-api` | Streaming, prompt templates, structured output, documentos, function calling | Pendiente |
 | 4 | 4 | `polyglot-chat` | Traducción en tiempo real, transcripción y síntesis de voz en un chat web | Pendiente |
