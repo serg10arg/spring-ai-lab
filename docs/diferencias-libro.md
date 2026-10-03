@@ -105,6 +105,41 @@ evita. Al final se listan las erratas encontradas en el texto.
 tanto el servidor Servlet (Tomcat) como el reactivo (Netty). En este classpath aplica
 el reactivo; el detalle está en el README del módulo.
 
+### D-011 — Moderation Model API documentada, no implementada
+
+- **Libro:** `OpenAiModerationModel` con `ModerationPrompt`.
+- **Acá:** no se implementa. Su lugar local lo ocupa `SafeGuardAdvisor` (etapa 2,
+  `lab-advisors`), que **no es equivalente**: filtra por lista de términos y no es un
+  clasificador entrenado.
+- **Por qué:** la abstracción existe. `ModerationModel`, `ModerationPrompt` y
+  `ModerationResponse` están en `spring-ai-model` 1.0.8, pero `spring-ai-ollama` no la
+  implementa. Verificado en los jars el 2026-10-03.
+- **Problema que evita:** pagar un proveedor de nube por una demo de bajo valor. Si
+  algún día aparece un proveedor local, el código de aplicación no cambia: solo falta
+  el proveedor.
+
+### D-012 — Image Model API documentada, no implementada
+
+- **Libro:** `ImageModel` sobre DALL-E.
+- **Acá:** no se implementa.
+- **Por qué:** igual que D-011. `ImageModel` existe como SPI en `spring-ai-model`, y
+  Ollama no tiene implementación porque no genera imágenes.
+- **Problema que evita:** gastar presupuesto en una capacidad que no aporta a un
+  portfolio de backend.
+
+### D-013 — Audio Model API diferida a las etapas 4 y 5
+
+- **Libro:** transcripción con Whisper (`OpenAiAudioTranscriptionModel`) y síntesis de
+  voz. El propio capítulo dice que vuelve al audio en el capítulo 5.
+- **Acá:** se difiere a las etapas 4 y 5, que lo necesitan de verdad.
+- **Por qué, y la restricción que hereda la arquitectura:** a diferencia de chat,
+  embeddings, image y moderation, audio **no tiene interfaz de modelo genérica** en
+  1.0.8. Los tipos de prompt y respuesta (`AudioTranscriptionPrompt`,
+  `AudioTranscriptionResponse`) son genéricos, pero no existe una SPI de modelo de
+  transcripción ni de síntesis de voz. El código de audio de las etapas 4 y 5 va a
+  quedar acoplado a tipos de OpenAI, y eso no se resuelve cambiando el starter.
+- **Problema que evita:** descubrir ese acoplamiento a mitad de la etapa 4.
+
 ## Hallazgos de calidad de modelo
 
 ### H-001 — Obediencia a instrucciones de formato (cap. 1)
@@ -121,8 +156,55 @@ si `llama3.2:3b` no produce JSON parseable de forma consistente, la hipótesis q
 confirmada y hará falta otra estrategia (reintentos, un modelo más grande, o validar
 contra el esquema).
 
+### H-002 — Formato obedecido, aritmética de husos horarios incorrecta (cap. 2)
+
+`lab-chat-client`, perfil `template`: convertir `Sat, 3 Oct 2026 14:00:00 GMT` (UTC) a
+`Asia/Tokyo` y responder en RFC-1123. El esperado es `Sat, 3 Oct 2026 23:00:00 +0900`.
+Cinco corridas por temperatura, el 2026-10-03:
+
+| Métrica | `temperature: 0.0` | `temperature: 0.8` |
+| --- | --- | --- |
+| Respuestas que parsean como RFC-1123 | 5 de 5 | 3 de 5 |
+| Respuestas correctas | 0 de 5 | 0 de 5 |
+| Respuestas distintas entre sí | 1 | 4 |
+
+Respuestas a 0.0: las cinco `Sat, 3 Oct 2026 04:00:00 +0900`. Respuestas a 0.8:
+`07:00 +0900` (dos veces), `03:00 +0900`, y dos que no parsean:
+`Sun, 3 Oct 2026 04:00:00 JST` (abreviatura de zona, que RFC-1123 no admite) y
+`Wed, 3 Oct 2026 04:00:00 +0900` (día de la semana inconsistente con la fecha, que
+`java.time` rechaza).
+
+Lecturas:
+
+- **Una respuesta que parsea no es una respuesta correcta.** La hipótesis previa era que
+  fallaría el formato. A temperatura 0 el formato sale bien siempre y el contenido sale
+  mal siempre: es el modo de falla silencioso. Un `StructuredOutputConverter` valida la
+  forma, no el contenido.
+- **La temperatura explica la identidad entre corridas, verificado.** A 0.8 las
+  respuestas divergen y aparecen fallas de formato. A 0.0 la falla es sistemática, así
+  que reintentar no la corrige; a 0.8 reintentar puede conseguir una respuesta que
+  parsee, pero ninguna de las diez fue correcta.
+- **Hipótesis sobre el mecanismo, no verificada:** el modelo no hace aritmética de
+  instantes. Toma la hora del reloj de la entrada y le aplica un delta inventado, sin
+  usar que el RFC-1123 de entrada ya trae su offset. Si es así, el ejemplo le pide al
+  LLM un cálculo que corresponde a `java.time`, no a un modelo generativo. Es el
+  problema que resuelve tool calling (capítulo 3): el modelo decide *qué* calcular y una
+  función Java lo calcula.
+
+## Drift de API entre el libro y Spring AI 1.0.8
+
+El libro muestra código de varias épocas de Spring AI, parte anterior a 1.0 GA. Cada
+fila está verificada contra los jars o el código fuente de 1.0.8.
+
+| Patrón del libro | En Spring AI 1.0.8 | Verificado |
+| --- | --- | --- |
+| `Document.builder().withContent(..).withId(..)` | `Document.builder().text(..).id(..)` | `javap`, 2026-10-03 |
+| `doc.getContent()` | `doc.getText()` | `javap`, 2026-10-03 |
+| `ChatResponse.builder().withGenerations(..)` | `ChatResponse.builder().generations(..)` | `javap`, 2026-10-03 |
+
 ## Erratas detectadas en el libro
 
 | Ubicación            | Dice                            | Debería decir                     | Nota                         |
 |----------------------|---------------------------------|-----------------------------------|------------------------------|
 | Cap. 1, página 13    | `spring-ai-starter-model-llama` | `spring-ai-starter-model-ollama`  | El artefacto `-llama` no existe en Maven Central. |
+| Cap. 2, ejemplo de `ChatClient` con converter | Inyecta `converter.getFormat()` en la plantilla y además llama `.entity(converter)` | Solo `.entity(converter)` | Redundancia, no drift: `.entity(converter)` ya agrega el formato al final del mensaje de usuario (`ChatModelCallAdvisor`), igual en 1.0.0 y en 1.0.8 (código fuente verificado). Hacer las dos cosas manda las instrucciones dos veces. |

@@ -14,6 +14,33 @@ Sin modelo, sin red, sin coste.
 Cubre: compilación, configuración de Spring, tests unitarios con dobles de prueba.
 No cubre: nada que dependa de la respuesta de un modelo.
 
+### Cómo verificar que un test de Nivel 0 no toca Ollama
+
+Correrlo con el servidor apuntando a un puerto donde no escucha nada:
+
+```powershell
+$env:SPRING_AI_OLLAMA_BASEURL = "http://localhost:1"
+.\gradlew build --console=plain
+Remove-Item Env:SPRING_AI_OLLAMA_BASEURL
+```
+
+Si pasa así, no hizo ninguna llamada de red. Si pasa con Ollama arriba y falla así,
+estaba llamando al modelo sin saberlo.
+
+### Cómo verificar que un test pasa por la razón correcta
+
+Romperlo a propósito: quitar lo que el test dice proteger y confirmar que falla.
+Dos casos verificados el 2026-10-03:
+
+- `lab-getting-started`: sin el `@MockitoBean` que reemplaza al runner, el test falla
+  con `I/O error on POST request for "http://localhost:1/api/chat"`. El mock sí
+  sustituye a la llamada real; `@SpringBootTest` ejecuta los `ApplicationRunner`.
+- `lab-chat-client`: con `SPRING_AI_MODEL_EMBEDDING=ollama`, el test que exige que no
+  haya `EmbeddingModel` falla. La propiedad `spring.ai.model.embedding: none` es la que
+  lo hace pasar.
+
+Un test que sigue en verde después de quitarle su razón de ser no estaba probando nada.
+
 ## Nivel 1 — Modelos locales con Ollama
 
 Sin coste por token. Coste real: RAM y tiempo de CPU.
