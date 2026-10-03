@@ -40,6 +40,9 @@ Dos casos verificados el 2026-10-03:
   lo hace pasar.
 - `lab-advisors`: con un `RateLimitAdvisor.tryAcquire()` que nunca rechaza, fallan
   `rejectsOverTheLimitWithoutCallingTheChain` y `zeroLimitNeverReachesTheModel`.
+- `lab-embeddings`: con `SPRING_AI_MODEL_CHAT=ollama`, falla
+  `chatAutoConfigurationIsDisabled`. Los tres módulos de la etapa 2 quedan con la misma
+  garantía verificada: ninguno puede pedir el modelo que no le corresponde.
 
 Un test que sigue en verde después de quitarle su razón de ser no estaba probando nada.
 

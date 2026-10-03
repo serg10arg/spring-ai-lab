@@ -153,6 +153,35 @@ el reactivo; el detalle está en el README del módulo.
 - **Problema que evita:** que el ejemplo dependa de código que todavía no existe en el
   repo. En la etapa 7 se evalúa si vale la pena agregarlas en `platform/ai-platform`.
 
+### D-015 — Splitters propios por verso y por estrofa
+
+- **Libro:** `NewlineTextSplitter` y `ParagraphTextSplitter`, de su módulo de extensiones
+  del capítulo 7.
+- **Acá:** `LineTextSplitter` y `StanzaTextSplitter`, dos subclases mínimas de
+  `TextSplitter` en `lab-embeddings`. Quedan marcadas para reemplazar en la etapa 7.
+- **Por qué no `TokenTextSplitter`, que sí trae Spring AI:** corta por cantidad de
+  tokens, no por versos o estrofas. Con sus defaults (800 tokens por chunk) cada canción
+  entra entera en un solo chunk: verificado con un test
+  (`tokenTextSplitterDefaultsLeaveEachSongInASingleChunk`). Con un tamaño chico corta en
+  lugares arbitrarios y parte versos al medio. La demo necesita que el chunk *sea* el
+  verso o la estrofa, porque busca que una frase corta coincida con el fragmento que la
+  contiene. El propio autor probó un `TokenTextSplitter` chico y lo dejó comentado.
+- **Problema que evita:** depender de código del capítulo 7 en el capítulo 2.
+
+### D-016 — Corpus de letras sustituido por canciones originales
+
+- **Libro:** carga letras completas de AC/DC, Bee Gees y Pearl Jam.
+- **Acá:** cuatro canciones originales escritas para la demo, en inglés, con la misma
+  estructura: dos comparten una palabra, una sola contiene una frase exacta, otra una
+  frase parcial, y una no debe coincidir con ninguna consulta.
+- **Por qué:** el repositorio es público y las letras tienen derechos de autor. En
+  inglés, porque `nomic-embed-text` está entrenado sobre todo en inglés y las consultas
+  del libro son en inglés: un corpus en español agregaría una variable más justo donde
+  se calibran umbrales a mano.
+- **Consecuencia:** los umbrales del libro no se pueden comparar número a número con los
+  de acá; se recalibran (H-004).
+- **Problema que evita:** publicar material con derechos de autor en un portfolio.
+
 ### D-017 — `MessageChatMemoryAdvisor` implementado sin ejemplo en el libro
 
 - **Libro:** describe el advisor de memoria en detalle, pero no trae ejemplo de código.
@@ -166,6 +195,18 @@ el reactivo; el detalle está en el README del módulo.
   Sin él falla con `IllegalArgumentException: conversationId cannot be null` antes de
   llegar al modelo. Verificado ejecutándolo (`MessageChatMemoryAdvisorTests`).
 - **Problema que evita:** llegar al capítulo 3 sin haber visto la memoria funcionando.
+
+### D-018 — `spring-ai-vector-store` declarado aparte en el catálogo
+
+- **Libro:** Maven, con los starters de cada ejemplo.
+- **Acá:** `spring-ai-vector-store` es una entrada propia de `gradle/libs.versions.toml`
+  y solo la declara `lab-embeddings`.
+- **Por qué:** el starter de Ollama trae el modelo, no el ecosistema. `SimpleVectorStore`
+  y `SearchRequest` no están en su classpath (verificado en los jars). La memoria de chat
+  sí viene con el starter (`ChatMemoryAutoConfiguration`), así que no hace falta otra
+  dependencia para eso.
+- **Problema que evita:** suponer que un starter de proveedor incluye vector stores, y
+  descubrirlo recién al compilar.
 
 ### D-019 — `RateLimitAdvisor` lanza una excepción en vez de devolver una respuesta sintética
 
@@ -254,6 +295,59 @@ puede testear como código. Lo que salvó la corrida no es una garantía.
 pero no reemplaza a un clasificador (D-011). Si en algún momento se usa en serio, hay que
 normalizar el texto antes de comparar, o escribir un advisor propio que lo haga.
 
+### H-004 — El umbral y el corte deciden el resultado (cap. 2)
+
+`lab-embeddings`, perfil `search`, `nomic-embed-text`, 2026-10-03. Tres consultas, tres
+formas de cortar el corpus y tres umbrales: 27 celdas. `topK` igual a la cantidad de
+chunks, para que el umbral sea el único filtro.
+
+Mejor score por canción (sin prefijos de tarea; en negrita, lo que debería aparecer):
+
+| Consulta | Chunking | A | B | C | D |
+| --- | --- | --- | --- | --- | --- |
+| `awake` | verso | **0,778** | **0,669** | 0,422 | 0,499 |
+| `awake` | estrofa | **0,626** | **0,662** | 0,418 | 0,451 |
+| `awake` | canción | **0,607** | **0,604** | 0,413 | 0,451 |
+| `copper in the rain` | verso | 0,484 | 0,473 | **0,941** | 0,443 |
+| `copper in the rain` | estrofa | 0,474 | 0,472 | **0,828** | 0,479 |
+| `copper in the rain` | canción | 0,439 | 0,479 | **0,811** | 0,479 |
+| `do I still belong here` | verso | **0,895** | 0,466 | 0,484 | 0,458 |
+| `do I still belong here` | estrofa | **0,651** | 0,448 | 0,448 | 0,489 |
+| `do I still belong here` | canción | **0,581** | 0,442 | 0,459 | 0,489 |
+
+Lecturas:
+
+- **A 0,55, las 9 combinaciones dan exactamente lo esperado.** Es el umbral robusto para
+  este corpus: queda por encima de todo lo irrelevante (máximo 0,499) y por debajo de
+  todo lo relevante (mínimo 0,581).
+- **A 0,70, el chunking decide.** Por verso se conservan `copper in the rain` y
+  `do I still belong here`, y `awake` pierde B. Por estrofa o por canción entera se
+  pierden `awake` y `do I still belong here` por completo. Solo `copper in the rain`
+  sobrevive con las tres estrategias.
+- **A 0,95 no vuelve nada, nunca.** Ni siquiera el verso que contiene la frase exacta
+  (`Copper in the rain, copper in the rain`, 0,941). Un umbral alto no significa "solo
+  coincidencias exactas": significa "nada" si el chunk tiene algo más que la consulta.
+- **Cuanto más chico el chunk, más alto el score del fragmento que coincide.** Para
+  `do I still belong here`: 0,895 por verso, 0,651 por estrofa, 0,581 por canción. El
+  resto del texto diluye el vector. Con la canción entera, el margen sobre lo irrelevante
+  es de solo 0,092: es el caso que el libro descarta.
+
+**Hipótesis de los prefijos de tarea, no confirmada en este corpus.** `nomic-embed-text`
+fue entrenado con prefijos (`search_document:` / `search_query:`) y Spring AI manda el
+texto crudo (verificado en el código fuente de `OllamaEmbeddingModel`). Con los prefijos
+puestos a mano (`--lab.embeddings.task-prefixes=true`):
+
+- Los conjuntos de resultados son **idénticos en las 27 celdas**.
+- Los scores se comprimen: lo relevante baja (0,941 → 0,820) y lo irrelevante sube
+  (0,422 → 0,475).
+- El margen entre la peor canción relevante y la mejor irrelevante **baja en las 9
+  combinaciones** (por ejemplo, verso + `do I still belong here`: 0,411 → 0,277).
+
+Con consultas de dos a cinco palabras y cuatro documentos, los prefijos no mejoran la
+separación; la empeoran. No alcanza para generalizar: es un corpus chico y una corrida.
+Queda para re-verificar en el capítulo 3, con RAG sobre documentos más largos.
+
+## Drift de API entre el libro y Spring AI 1.0.8
 
 El libro muestra código de varias épocas de Spring AI, parte anterior a 1.0 GA. Cada
 fila está verificada contra los jars o el código fuente de 1.0.8.
@@ -263,6 +357,7 @@ fila está verificada contra los jars o el código fuente de 1.0.8.
 | `Document.builder().withContent(..).withId(..)` | `Document.builder().text(..).id(..)` | `javap`, 2026-10-03 |
 | `doc.getContent()` | `doc.getText()` | `javap`, 2026-10-03 |
 | `ChatResponse.builder().withGenerations(..)` | `ChatResponse.builder().generations(..)` | `javap`, 2026-10-03 |
+| `SearchRequest.query(q).withSimilarityThreshold(d).withTopK(k)` | `SearchRequest.builder().query(q).similarityThreshold(d).topK(k).build()`. Ojo: `topK` por defecto es 4 | Código fuente, 2026-10-03 |
 | `InMemoryChatMemory` | No existe. `MessageWindowChatMemory` sobre `InMemoryChatMemoryRepository`, autoconfigurado por el starter | Listado del jar, 2026-10-03 |
 
 ## Erratas detectadas en el libro
