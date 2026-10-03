@@ -38,6 +38,8 @@ Dos casos verificados el 2026-10-03:
 - `lab-chat-client`: con `SPRING_AI_MODEL_EMBEDDING=ollama`, el test que exige que no
   haya `EmbeddingModel` falla. La propiedad `spring.ai.model.embedding: none` es la que
   lo hace pasar.
+- `lab-advisors`: con un `RateLimitAdvisor.tryAcquire()` que nunca rechaza, fallan
+  `rejectsOverTheLimitWithoutCallingTheChain` y `zeroLimitNeverReachesTheModel`.
 
 Un test que sigue en verde después de quitarle su razón de ser no estaba probando nada.
 

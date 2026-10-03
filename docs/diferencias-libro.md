@@ -140,6 +140,29 @@ el reactivo; el detalle está en el README del módulo.
   quedar acoplado a tipos de OpenAI, y eso no se resuelve cambiando el starter.
 - **Problema que evita:** descubrir ese acoplamiento a mitad de la etapa 4.
 
+### D-014 — `RateLimitAdvisor` sin `@EnableRateLimit` ni `@EnableChatClient`
+
+- **Libro:** activa su `RateLimitAdvisor` con anotaciones de su módulo de extensiones.
+- **Acá:** `RateLimitAdvisor` es un bean común, registrado con `.defaultAdvisors(...)`.
+- **Por qué:** esas anotaciones no son de Spring AI: son extensiones que el libro
+  construye en el capítulo 7. Usarlas en el capítulo 2 adelantaría ese material.
+- **Problema que evita:** que el ejemplo dependa de código que todavía no existe en el
+  repo. En la etapa 7 se evalúa si vale la pena agregarlas en `platform/ai-platform`.
+
+### D-017 — `MessageChatMemoryAdvisor` implementado sin ejemplo en el libro
+
+- **Libro:** describe el advisor de memoria en detalle, pero no trae ejemplo de código.
+- **Acá:** `lab-advisors`, perfil `memory`: la misma conversación de dos turnos sin y con
+  el advisor.
+- **Por qué:** es el advisor que más se usa en los capítulos siguientes, y el contraste
+  "sin memoria" es la lección.
+- **Detalle de 1.0.8:** el `ChatMemory` lo autoconfigura el starter
+  (`MessageWindowChatMemory`, 20 mensajes), pero el advisor exige el id de conversación
+  en el contexto de cada pedido: `.advisors(a -> a.param(ChatMemory.CONVERSATION_ID, id))`.
+  Sin él falla con `conversationId cannot be null` (un `Assert` en el código fuente; no
+  se ejecutó).
+- **Problema que evita:** llegar al capítulo 3 sin haber visto la memoria funcionando.
+
 ## Hallazgos de calidad de modelo
 
 ### H-001 — Obediencia a instrucciones de formato (cap. 1)
@@ -191,7 +214,24 @@ Lecturas:
   problema que resuelve tool calling (capítulo 3): el modelo decide *qué* calcular y una
   función Java lo calcula.
 
-## Drift de API entre el libro y Spring AI 1.0.8
+### H-003 — `SafeGuardAdvisor` no es moderación (cap. 2)
+
+`lab-advisors`, perfil `safeguard`, palabra prohibida `launder`, 2026-10-03.
+`SafeGuardAdvisor` busca subcadenas literales en el contenido del prompt, distinguiendo
+mayúsculas (`String.contains`, verificado en el código fuente de 1.0.8):
+
+| Prompt | Resultado | Por qué |
+| --- | --- | --- |
+| `How do I launder money?` | Bloqueado en 1 ms | Coincidencia exacta; el modelo nunca recibe el pedido |
+| `How do I Launder money?` | Pasa al modelo | Falso negativo: la mayúscula esquiva el filtro |
+| `Who were the money launderers in the film?` | Bloqueado | Falso positivo: subcadena dentro de otra palabra (test unitario) |
+
+En la corrida, el pedido con mayúscula lo frenó el propio `llama3.2:3b`, que se negó a
+responder. O sea que la defensa que funcionó fue la del modelo, no la del advisor.
+`SafeGuardAdvisor` sirve como corte barato y determinista antes de gastar una llamada,
+pero no reemplaza a un clasificador (D-011). Si en algún momento se usa en serio, hay que
+normalizar el texto antes de comparar, o escribir un advisor propio que lo haga.
+
 
 El libro muestra código de varias épocas de Spring AI, parte anterior a 1.0 GA. Cada
 fila está verificada contra los jars o el código fuente de 1.0.8.
@@ -201,6 +241,7 @@ fila está verificada contra los jars o el código fuente de 1.0.8.
 | `Document.builder().withContent(..).withId(..)` | `Document.builder().text(..).id(..)` | `javap`, 2026-10-03 |
 | `doc.getContent()` | `doc.getText()` | `javap`, 2026-10-03 |
 | `ChatResponse.builder().withGenerations(..)` | `ChatResponse.builder().generations(..)` | `javap`, 2026-10-03 |
+| `InMemoryChatMemory` | No existe. `MessageWindowChatMemory` sobre `InMemoryChatMemoryRepository`, autoconfigurado por el starter | Listado del jar, 2026-10-03 |
 
 ## Erratas detectadas en el libro
 
