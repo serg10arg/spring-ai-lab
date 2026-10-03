@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: lab-embeddings
+  profiles:
+    # Un runner por perfil: search | dimension. Sin --spring.profiles.active corre search.
+    default: search
+  ai:
+    model:
+      # Este modulo solo embebe: sin bean de chat, nada puede pedir llama3.2:3b.
+      chat: none
+    ollama:
+      base-url: http://localhost:11434
+      init:
+        # Nunca descargar modelos en el arranque: falla rapido con 404 si el nombre no existe.
+        pull-model-strategy: never
+      embedding:
+        options:
+          model: nomic-embed-text
+
+lab:
+  embeddings:
+    # nomic-embed-text fue entrenado con prefijos de tarea; Spring AI manda el texto crudo.
+    # true antepone search_document: / search_query: a mano, para comparar (H-004).
+    task-prefixes: false

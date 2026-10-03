@@ -32,11 +32,14 @@ El diagrama de arquitectura vive en `docs/images/` y se construye de forma incre
 cada etapa agrega el módulo que le corresponde y la prosa que recorre el flujo de una
 petición de punta a punta nombrando clases reales.
 
-Estado actual: tres módulos de consola sobre el starter de Ollama y `llama3.2:3b`.
+Estado actual: cuatro módulos de consola sobre el starter de Ollama.
 `labs/lab-getting-started` inyecta `ChatModel` directamente; `labs/lab-chat-client`
 construye un `ChatClient` sobre ese mismo `ChatModel` a partir del builder
 autoconfigurado; `labs/lab-advisors` intercala advisors entre el `ChatClient` y el
-modelo, incluido un `RateLimitAdvisor` propio que corta la cadena antes de llamarlo. La
+modelo, incluido un `RateLimitAdvisor` propio que corta la cadena antes de llamarlo.
+Esos tres usan `llama3.2:3b`. `labs/lab-embeddings` es el único que usa
+`nomic-embed-text`: corta un corpus en chunks, los guarda en un `SimpleVectorStore` y
+busca por similitud coseno. Cada módulo desactiva la familia de modelo que no usa. La
 estructura de carpetas (`labs/`, `apps/`, `platform/`, `agents/`) refleja la
 organización prevista, documentada en la tabla de módulos.
 
@@ -47,7 +50,7 @@ organización prevista, documentada en la tabla de módulos.
 | `labs/lab-getting-started` | Referencia | Ejemplo de control: `ChatModel` portable sobre Ollama, sin servidor web | Completado |
 | `labs/lab-chat-client` | Referencia | `ChatClient` sobre `ChatModel`: builder autoconfigurado, `ChatClientCustomizer`, plantillas, converter propio, streaming | Completado |
 | `labs/lab-advisors` | Referencia | La cadena de advisors: logging, orden, safeguard, memoria de chat y un `RateLimitAdvisor` propio | Completado |
-| `labs/lab-embeddings` | Referencia | `EmbeddingModel`, `SimpleVectorStore`, búsqueda por similitud y chunking | Pendiente |
+| `labs/lab-embeddings` | Referencia | `EmbeddingModel`, `SimpleVectorStore`, búsqueda por similitud y chunking, con `nomic-embed-text` | Completado |
 | `labs/lab-advanced-api` | Referencia | Streaming, prompt templates, structured output, procesamiento de documentos, function calling | Pendiente |
 | `apps/polyglot-chat` | Aplicación | Chat web con traducción en tiempo real, transcripción de voz y síntesis de voz | Pendiente |
 | `apps/beat-shazam` | Aplicación | Identificación de canciones mediante huella de audio y búsqueda por similitud vectorial | Pendiente |

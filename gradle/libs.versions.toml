@@ -17,5 +17,8 @@ junit-platform-launcher  = { module = "org.junit.platform:junit-platform-launche
 spring-ai-starter-model-ollama = { module = "org.springframework.ai:spring-ai-starter-model-ollama" }
 spring-ai-starter-model-openai = { module = "org.springframework.ai:spring-ai-starter-model-openai" }
 
+# El starter de proveedor trae el modelo, no el ecosistema: el vector store va aparte (D-018)
+spring-ai-vector-store = { module = "org.springframework.ai:spring-ai-vector-store" }
+
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }

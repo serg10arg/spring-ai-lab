@@ -4,7 +4,7 @@ rootProject.name = "spring-ai-lab"
 include("labs:lab-getting-started")    // etapa 1 — cap. 1
 include("labs:lab-chat-client")        // etapa 2 — cap. 2
 include("labs:lab-advisors")           // etapa 2 — cap. 2
-// include("labs:lab-embeddings")       // etapa 2 — cap. 2
+include("labs:lab-embeddings")         // etapa 2 — cap. 2
 // include("labs:lab-advanced-api")    // etapa 3 — cap. 3
 // include("apps:polyglot-chat")       // etapa 4 — cap. 4
 // include("apps:beat-shazam")         // etapa 5 — cap. 5
